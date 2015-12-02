@@ -1,16 +1,22 @@
 ##AWS Lambda Gulp Tasks
 
-copy, configure, npm install, zip, test, upload gulp tasks for aws lambda
+This is a set of gulp tasks that copy, configure, npm install, zip, test, upload gulp tasks for aws lambda. The main difference between these gulp tasks and others I have found is it allows you to run tasks against multiple lambda handlers at once.
 
 ### Installation
+
+Install @literacyplanet/lambda_gulp_deploy
 
 ```sh
 npm install @literacyplanet/lambda_gulp_deploy --save-dev
 ```
 
+Install gulp (global is optional)
+
 ```sh
 npm install gulp -g
 ```
+
+In your local gulpfile.js
 
 ```js
 // add to gulpfile.js
@@ -50,7 +56,7 @@ gulp test --match=**
 * Deletes the {handler}/node_modules dir
 * Runs npm in handlers folder (no production flag)
 * Runs tests from handlers folder
-* Concatenates coverage reports into one file (coverage/lcov.info)
+* Concatenates coverage reports into one file (coverage/lcov.info) to make lambdas appear to be one project
 
 ### Independent tasks
 
