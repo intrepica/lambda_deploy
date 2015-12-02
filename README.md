@@ -22,7 +22,9 @@ In your local gulpfile.js
 // add to gulpfile.js
 var gulp = require('gulp');
 // pass along gulp reference to have tasks imported
-require('@literacyplanet/lambda_gulp_deploy')(gulp);
+var tasks = require('@literacyplanet/lambda_gulp_deploy');
+
+tasks.init(gulp);
 ```
 
 ### Gulp Options
@@ -33,6 +35,8 @@ require('@literacyplanet/lambda_gulp_deploy')(gulp);
 * **--match** *match packages using [node-glob](https://www.npmjs.com/package/glob). It looks for [handlerPath]/[match]/package.json*
 * **--env** *adds env to name of lambda and uses env to lookup .env file in [configsPath]/.env.[env]*
 * **--lambdaRole** *needed when creating new lambdas*
+
+aws credentials are looked up in your environment. Check the aws-sdk for info as to where the configs live (hint ~/.aws/credentials).
 
 ### Deploy Example
 
@@ -73,3 +77,58 @@ gulp test --match=**
 * test-npm-install
 * run-test
 * concat-coverage-reports
+
+### Custom tasks
+
+This module exports an `eachPackage` method that uses [async.eachLimit](https://github.com/caolan/async) to apply the task in parallel (up to limit). The `eachPackage` method calls back with a handler that has the following props on.
+
+**pkg** *the package.json as an object literal*
+**pkgPath** *the path to the handlers package.json*
+**srcDir** *the path to the handler*
+**destDir** *the path to packages destination*
+
+```js
+var gulp = require('gulp');
+var tasks = require('@literacyplanet/lambda_gulp_deploy');
+
+tasks.init(gulp);
+
+gulp.task('my-custom-task', ['find-packages'], function(callback) {
+  var limit = 5; // apply this task to 5 packages at once!
+  tasks.eachPackage(limit, function iterator(handler, cb) {
+
+    // do something with this package
+    console.log(handler);
+
+    // { pkg:
+    //    { name: 'my_handler',
+    //      version: '1.0.0',
+    //      description: '',
+    //      main: 'index.js',
+    //      author: 'Tim Fairbrother',
+    //      scripts:
+    //       { test: 'node_modules/.bin/mocha --compilers js:babel/register',
+    //         watch_test: 'node_modules/.bin/mocha -w --compilers js:babel/register',
+    //         run: 'node_modules/.bin/babel index.js' },
+    //      license: 'ISC',
+    //      dependencies:
+    //       { dotenv: '^1.2.0',
+    //         moment: '^2.10.3' },
+    //      devDependencies:
+    //       { babel: '^5.6.14',
+    //         'expect.js': '^0.3.1',
+    //         mocha: '^2.2.4',
+    //         nock: '^2.12.0',
+    //         proxyquire: '^1.4.0',
+    //         sinon: '^1.14.1' } },
+    //   pkgPath: '/Users/timfairbrother/code/lambda/handlers/my_handler/package.json',
+    //   srcDir: '/Users/timfairbrother/code/lambda/handlers/my_handler',
+    //   destDir: 'dist/my_handler/' }
+
+    // Call this when done!
+    cb();
+  }, callback);
+});
+```
+
+To override the deploy or test tasks, use `https://www.npmjs.com/package/run-sequence` to create a newly named task with the tasks in the order you choose.

@@ -22,7 +22,21 @@ var plumber = require('gulp-plumber');
 var npmInstall = require('gulp-install');
 var awslambda = require('gulp-awslambda');
 
-module.exports = function(gulp) {
+var memory = {
+  packages: {},
+  deferred: false
+};
+
+function eachPackage(limit, iterator, callback) {
+  var packages = Object.keys(memory.packages);
+  var LIMIT = 5;
+  async.eachLimit(packages, limit, function(name, cb) {
+    var handler = memory.packages[name];
+    iterator(handler, cb);
+  }, callback);
+}
+
+function init(gulp) {
 
   var gulpSrc = gulp.src;
   gulp.src = function() {
@@ -61,20 +75,6 @@ module.exports = function(gulp) {
       ('!' + options.handlerPath),
       options.match, 'node_modules', '**', 'package.json')
   ];
-
-  var memory = {
-    packages: {},
-    deferred: false
-  };
-
-  function eachPackage(limit, iterator, callback) {
-    var packages = Object.keys(memory.packages);
-    var LIMIT = 5;
-    async.eachLimit(packages, limit, function(name, cb) {
-      var handler = memory.packages[name];
-      iterator(handler, cb);
-    }, callback);
-  }
 
   gulp.task('find-packages', function(callback) {
     if (!memory.deferred) {
@@ -210,15 +210,15 @@ module.exports = function(gulp) {
   });
 
   gulp.task('zip', ['find-packages'], function(callback) {
-      var limit = 5;
-      gutil.log('Starting Zip');
-      eachPackage(limit, function iterator(handler, cb) {
-          gutil.log('Zipping', gutil.colors.cyan(handler.pkg.name));
-          gulp.src(path.join(handler.destDir, '/**/*'), {dot: true})
-              .pipe(zip(handler.pkg.name + '.zip'))
-              .pipe(gulp.dest(options.dist))
-              .on('end', cb);
-      }, callback);
+    var limit = 5;
+    gutil.log('Starting Zip');
+    eachPackage(limit, function iterator(handler, cb) {
+      gutil.log('Zipping', gutil.colors.cyan(handler.pkg.name));
+      gulp.src(path.join(handler.destDir, '/**/*'), {dot: true})
+          .pipe(zip(handler.pkg.name + '.zip'))
+          .pipe(gulp.dest(options.dist))
+          .on('end', cb);
+    }, callback);
   });
 
   gulp.task('upload', ['find-packages'], function(callback) {
@@ -241,13 +241,15 @@ module.exports = function(gulp) {
     }, callback);
   });
 
+  runSequence = runSequence.use(gulp);
+
   gulp.task('deploy', function(callback) {
     runSequence(
       'build-clean',
       ['copy-files', 'env', 'build-npm-install'],
       'zip',
       'upload',
-      callback);
+    callback);
   });
 
   gulp.task('test', function(callback) {
@@ -258,4 +260,7 @@ module.exports = function(gulp) {
       'concat-coverage-reports',
       callback);
   });
-}
+};
+
+exports.init = init;
+exports.eachPackage = eachPackage;
