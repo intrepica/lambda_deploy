@@ -1,5 +1,6 @@
 'use strict';
 
+var fs = require('fs');
 var async = require('async');
 var parsePath = require('parse-filepath');
 var path = require('path');
@@ -21,6 +22,8 @@ var gutil = require('gulp-util');
 var plumber = require('gulp-plumber');
 var npmInstall = require('gulp-install');
 var awslambda = require('gulp-awslambda');
+
+var configureSources = require('@literacyplanet/lambda_configure_event_sources');
 
 var memory = {
   packages: {},
@@ -98,6 +101,32 @@ function init(gulp) {
     }
     // Only load this task once - hence a promise is returned
     return memory.deferred.promise;
+  });
+
+  gulp.task('get-config', ['find-packages'], function(callback) {
+    var limit = 4;
+    eachPackage(limit, function iterator(handler, cb) {
+      var awsConfig = [
+        options.configsPath,
+        handler.pkg.name,
+        '/aws.' + options.env + '.json'
+      ].join('');
+      gutil.log('Loading aws config at', gutil.colors.cyan(awsConfig));
+      fs.readFile(awsConfig, 'utf8', function(err, file) {
+        if (err && err.code === 'ENOENT') {
+          gutil.log(gutil.colors.red('WARNING:') +
+            ' No aws config found in', gutil.colors.cyan(awsConfig));
+          return cb();
+        }
+        if (err) {
+          gutil.log(err);
+          return cb(err);
+        }
+        var config = JSON.parse(file);
+        handler.lambdaConfig = config;
+        cb();
+      });
+    }, callback);
   });
 
   function clean(options, callback) {
@@ -221,23 +250,54 @@ function init(gulp) {
     }, callback);
   });
 
-  gulp.task('upload', ['find-packages'], function(callback) {
+  function getLambdaName(handler) {
+    return [
+      handler.pkg.name,
+      '-',
+      options.env
+    ].join('');
+  }
+
+  gulp.task('upload', ['find-packages', 'get-config'], function(callback) {
     var limit = 1;
     eachPackage(limit, function iterator(handler, cb) {
-      var lambdaName = [
-        handler.pkg.name,
-        '-',
-        options.env
-      ].join('');
+      var lambdaName = getLambdaName(handler);
       var zipFile = path.join(options.dist, handler.pkg.name + '.zip');
       gutil.log('Uploading', gutil.colors.cyan(zipFile));
+      var config = handler.lambdaConfig;
+      var role = config && config.Role || options.lambdaRole;
+      var handler = config && config.Handler || 'index.handler';
+      var timeout = config && config.Timeout || 5;
+      var memorySize = config && config.MemorySize || 128;
       gulp.src(zipFile)
-           .pipe(awslambda({
-              FunctionName: lambdaName,
-              Handler: 'index.handler',
-              Role: options.lambdaRole
-            }))
-           .on('end', cb);
+       .pipe(awslambda({
+          FunctionName: lambdaName,
+          Handler: handler,
+          Role: role,
+          Timeout: timeout,
+          MemorySize: memorySize
+        }))
+       .on('end', cb);
+    }, callback);
+  });
+
+  gulp.task('link-event-sources', ['get-config'], function(callback) {
+    var limit = 1;
+    eachPackage(limit, function iterator(handler, cb) {
+      var lambdaName = getLambdaName(handler);
+      gutil.log('Setting event sources for',
+        gutil.colors.cyan(lambdaName));
+      var config = handler.lambdaConfig;
+      if (config.EventSources) {
+        configureSources.createOrUpdateSources({
+          eventSources: config.EventSources,
+          region: config.Region,
+          lambdaName: lambdaName
+        }, cb);
+      } else {
+        gutil.log('No event sources found for',
+          gutil.colors.cyan(handler.pkg.name));
+      }
     }, callback);
   });
 
@@ -249,7 +309,8 @@ function init(gulp) {
       ['copy-files', 'env', 'build-npm-install'],
       'zip',
       'upload',
-    callback);
+      'link-event-sources',
+      callback);
   });
 
   gulp.task('test', function(callback) {

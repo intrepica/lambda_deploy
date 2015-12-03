@@ -16,6 +16,7 @@
     "gulp"
   ],
   "dependencies": {
+    "@literacyplanet/lambda_configure_event_sources": "^1.0.2",
     "async": "^1.3.0",
     "concat-stream-callback": "^1.0.1",
     "coveralls": "^2.11.4",

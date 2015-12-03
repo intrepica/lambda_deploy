@@ -21,9 +21,9 @@ In your local gulpfile.js
 ```js
 // add to gulpfile.js
 var gulp = require('gulp');
-// pass along gulp reference to have tasks imported
 var tasks = require('@literacyplanet/lambda_gulp_deploy');
 
+// pass along gulp reference to have tasks imported
 tasks.init(gulp);
 ```
 
@@ -49,7 +49,28 @@ gulp deploy --match=** --env=staging --lambdaRole=arn:aws:iam::xxxxxx:role/
 * Runs npm install --production on {dist}/{handler} folder
 * Copies environment vars from {configsPath}/{handler}/.env.{env} to {dist}/{handler}/.env
 * Zips {dist}/{handler} directory to {dist}/{handler}.zip
-* Uploads zip file to Lambda service using the name from {handler}/package.json with a -environment prefix (eg. my_awsome_lambda_handler-staging)
+* Uploads zip file to Lambda service using the name from {handler}/package.json with an -environment prefix (eg. my_awsome_lambda_handler-staging). It uses the aws config located in {configsPath}/{handler}/aws.{env}.json to set the Role, Timeout, Handler, MemorySize and Region. If a command line arg is set, configs take precedence over these settings.
+* Creates/updates/deletes event sources using the config located in {configsPath}/{handler}/aws.{env}.json
+
+### aws.{env}.json Format
+
+```json
+{
+  "EventSources": [
+    {
+      "EventSourceArn": "arn:aws:dynamodb:us-east-1:xxxxxx:table/my_dynamo_table/stream/2015-12-03T01:01:02.357",
+      "StartingPosition": "TRIM_HORIZON",
+      "Enabled": true,
+      "BatchSize": 1
+    }
+  ],
+  "Role": "arn:aws:iam::xxxxxx:role/lambda_basic_execution",
+  "Timeout": 300,
+  "Handler": "index.handler",
+  "MemorySize": 128,
+  "Region": "us-east-1"
+}
+```
 
 ### Test Example
 
@@ -71,6 +92,7 @@ gulp test --match=**
 * build-npm-install
 * zip
 * upload
+* link-event-sources
 
 #### Running tests
 * test-clean
@@ -131,4 +153,4 @@ gulp.task('my-custom-task', ['find-packages'], function(callback) {
 });
 ```
 
-To override the deploy or test tasks, use `https://www.npmjs.com/package/run-sequence` to create a newly named task with the tasks in the order you choose.
+To override the deploy or test tasks, use [run-sequence](https://www.npmjs.com/package/run-sequence) to create a newly named task with the tasks in the order you choose.
