@@ -22,8 +22,11 @@ var gutil = require('gulp-util');
 var plumber = require('gulp-plumber');
 var npmInstall = require('gulp-install');
 var awslambda = require('gulp-awslambda');
+var babel = require('gulp-babel');
+var es2015Preset = require('babel-preset-es2015');
 
-var configureSources = require('@literacyplanet/lambda_configure_event_sources');
+var configureSources =
+require('@literacyplanet/lambda_configure_event_sources');
 
 var memory = {
   packages: {},
@@ -172,6 +175,24 @@ function init(gulp) {
     }, callback);
   });
 
+  gulp.task('transpile-js', ['find-packages'], function(callback) {
+    var excludeFiles = [
+      '!node_modules',
+      '!node_modules/**/*'
+    ];
+    var limit = 5;
+    eachPackage(limit, function iterator(handler, cb) {
+      var srcFiles = ['**/*.js'].concat(excludeFiles);
+      gutil.log('Transpiling js files', gutil.colors.cyan(handler.pkg.name));
+      gulp.src(srcFiles, {cwd: handler.destDir})
+        .pipe(babel({
+          presets: [es2015Preset]
+        }))
+        .pipe(gulp.dest(handler.destDir))
+        .on('end', cb);
+    }, callback);
+  });
+
   function runNpmInstall(options, callback) {
     var limit = 1;
     eachPackage(limit, function iterator(handler, cb) {
@@ -206,7 +227,10 @@ function init(gulp) {
       gulp.src('test/**/*_spec.js', opts)
         .pipe(mocha({
           R: 'spec',
-          istanbul: istanbul
+          istanbul: istanbul,
+          compilers: [
+            'js:babel/register'
+          ]
         }))
         .on('end', cb);
     }, callback);
@@ -288,7 +312,7 @@ function init(gulp) {
       gutil.log('Setting event sources for',
         gutil.colors.cyan(lambdaName));
       var config = handler.lambdaConfig;
-      if (config.EventSources) {
+      if (config && config.EventSources) {
         configureSources.createOrUpdateSources({
           eventSources: config.EventSources,
           region: config.Region,
@@ -307,6 +331,7 @@ function init(gulp) {
     runSequence(
       'build-clean',
       ['copy-files', 'env', 'build-npm-install'],
+      'transpile-js',
       'zip',
       'upload',
       'link-event-sources',
