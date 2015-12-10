@@ -220,10 +220,10 @@ function init(gulp) {
     var limit = 1;
     eachPackage(limit, function iterator(handler, cb) {
       var opts = {cwd: handler.srcDir, read: false};
-      var istanbul = (options.env === 'test') ? {
+      var istanbul = {
         report: 'lcovonly',
         dir: path.join('coverage', handler.pkg.name)
-      } : false;
+      };
       gulp.src('test/**/*_spec.js', opts)
         .pipe(mocha({
           R: 'spec',
@@ -252,10 +252,10 @@ function init(gulp) {
       var secretConfigsEnvPath = [
         options.configsPath,
         handler.pkg.name,
-        '/config.env.',
+        '/.env.',
         options.env
       ].join('');
-      gulp.src(secretConfigsEnvPath)
+      gulp.src(secretConfigsEnvPath, {dot: true})
           .pipe(rename('.env'))
           .pipe(gulp.dest(handler.destDir))
           .on('end', cb);
