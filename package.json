@@ -1,7 +1,7 @@
 {
   "name": "@literacyplanet/lambda_gulp_deploy",
   "public": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "copy, configure, npm install, zip, test, upload gulp tasks for aws lambda",
   "main": "index.js",
   "author": "Tim Fairbrother <tdfairbrother@gmail.com>",
