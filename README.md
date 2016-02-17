@@ -35,6 +35,7 @@ tasks.init(gulp);
 * **--match** *match packages using [node-glob](https://www.npmjs.com/package/glob). It looks for [handlerPath]/[match]/package.json*
 * **--env** *adds env to name of lambda and uses env to lookup .env file in [configsPath]/.env.[env]*
 * **--lambdaRole** *needed when creating new lambdas*
+* **--testTimeout** *defaults to 2000 (2 seconds)*
 
 aws credentials are looked up in your environment. Check the aws-sdk for info as to where the configs live (hint ~/.aws/credentials).
 
