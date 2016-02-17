@@ -58,12 +58,13 @@ function init(gulp) {
   };
 
   var knownOptions = {
-    string: ['env','configsPath','lambdaRole','dist','match', 'handlerPath'],
+    string: ['env','configsPath','lambdaRole','dist','match', 'handlerPath', 'testTimeout'],
     default: {
       handlerPath: './lambda/handlers/',
       dist: './lambda/dist/',
       env: 'staging',
-      configsPath: './lambda/configs/'
+      configsPath: './lambda/configs/',
+      testTimeout: '2000'
     }
   };
 
@@ -227,6 +228,7 @@ function init(gulp) {
       gulp.src('test/**/*_spec.js', opts)
         .pipe(mocha({
           R: 'spec',
+          t: options.testTimeout,
           istanbul: istanbul,
           compilers: [
             'js:babel/register'
