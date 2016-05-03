@@ -250,11 +250,11 @@ function init(gulp) {
   gulp.task('env', ['find-packages'], function(callback) {
     var limit = 5;
     eachPackage(limit, function iterator(handler, cb) {
-      gutil.log('Copying .env', gutil.colors.cyan(handler.pkg.name));
+      gutil.log('Copying config.env to dist/.env', gutil.colors.cyan(handler.pkg.name));
       var secretConfigsEnvPath = [
         options.configsPath,
         handler.pkg.name,
-        '/.env.',
+        '/config.env.',
         options.env
       ].join('');
       gulp.src(secretConfigsEnvPath, {dot: true})

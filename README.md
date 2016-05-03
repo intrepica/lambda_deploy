@@ -33,7 +33,7 @@ tasks.init(gulp);
 * **--dist** *path to dist dir. Defaults to ./lambda/dist/*
 * **--configsPath** *path to configs dir. Defaults to ./lambda/configs/*
 * **--match** *match packages using [node-glob](https://www.npmjs.com/package/glob). It looks for [handlerPath]/[match]/package.json*
-* **--env** *adds env to name of lambda and uses env to lookup .env file in [configsPath]/.env.[env]*
+* **--env** *adds env to name of lambda and uses env to lookup .env file in [configsPath]/config.env.[env]*
 * **--lambdaRole** *needed when creating new lambdas*
 * **--testTimeout** *defaults to 2000 (2 seconds)*
 
