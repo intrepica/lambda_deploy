@@ -1,6 +1,6 @@
 {
   "name": "@literacyplanet/lambda_gulp_deploy",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "dependencies": {
     "@literacyplanet/lambda_configure_event_sources": {
       "version": "1.0.2",
