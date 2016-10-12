@@ -295,6 +295,7 @@ function init(gulp) {
       var handler = config && config.Handler || 'index.handler';
       var timeout = config && config.Timeout || 5;
       var memorySize = config && config.MemorySize || 128;
+      var region = config && region.Region || 'us-east-1';
       gulp.src(zipFile)
        .pipe(awslambda({
           FunctionName: lambdaName,
@@ -302,6 +303,8 @@ function init(gulp) {
           Role: role,
           Timeout: timeout,
           MemorySize: memorySize
+        }, {
+          region: region
         }))
        .on('end', cb);
     }, callback);
