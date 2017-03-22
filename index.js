@@ -296,13 +296,15 @@ function init(gulp) {
       var timeout = config && config.Timeout || 5;
       var memorySize = config && config.MemorySize || 128;
       var region = config && config.Region || 'us-east-1';
+      var memorySize = config && config.Runtime || config.runtime || 'nodejs4.3';
       gulp.src(zipFile)
        .pipe(awslambda({
           FunctionName: lambdaName,
           Handler: handler,
           Role: role,
           Timeout: timeout,
-          MemorySize: memorySize
+          MemorySize: memorySize,
+          Runtime: ''
         }, {
           region: region
         }))
